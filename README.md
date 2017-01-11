@@ -3,8 +3,11 @@ Library of code to have Raspberry Pi interact with sensors and heating device fo
 
 ### Depenencies
 Python 3.*
+
 Pytest
+
 Numpy
+
 Some GPIO
 
 ### Development
