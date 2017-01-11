@@ -12,7 +12,7 @@ Some GPIO
 
 ### Development
 - [x] Initialization
-- [ ] Virtual Environment
+- [x] Virtual Environment (using Anaconda..for now)
 - [ ] Testing
 - [ ] Sensor Code
 - [ ] Thermal Plate Code
