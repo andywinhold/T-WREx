@@ -1,1 +1,3 @@
 https://learn.adafruit.com/max31855-thermocouple-python-library/hardware
+
+Temperature Logging: http://www.cl.cam.ac.uk/projects/raspberrypi/tutorials/temperature/
