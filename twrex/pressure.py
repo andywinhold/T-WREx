@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 ##import u3
 ##
 ###Empty lists for both pressure sensors
-##P1 = []
-##P2 = []
+##p1 = []
+##p2 = []
 ##
 ### Establish connection to first U3 device found. We should only have one connected.
 ##d = u3.U3()
@@ -42,8 +42,23 @@ import matplotlib.pyplot as plt
 ##ain1val = d.getAIN(1)
 ##print "testing AIN1 {0:.5f}".format(ain1val)
 ##print ain1val
-stuff = []
+
+p1 = []
+p2 = []
 while (True):
+        # Get reading from first pressure sensor
+##      pval1 = d.getAIN(0)
+##	print "Reading for p1 {0:.5f}".format(ain0val)
+
+        # Get reading from second pressure sensor
+##	pval2 = d.getAIN(1)
+##	print "Reading for p2 {0:.5f}".format(ain1val)
+
+        # Convert voltage to Torr
+##        pval1 = v2p(pval1)
+##        pval2 = v2p(pval2)
+
+##	time.sleep(1)
         add = raw_input('add')
         if add == 'done':
                 print "end of collection"
@@ -52,26 +67,38 @@ while (True):
         add = float(add)
         stuff.append(add)
 
-df1 = pd.DataFrame(stuff)
-df1.to_csv('test1.csv', sep=',')
-new_df = pd.read_csv('test1.csv')
+        # add readings to their lists
+##        pval1 = float(pval1)
+##        pval2 = float(pval2)
+##        p1.append(pval1)
+##        p2.append(pval2)
+
+# make lists into data frame
+df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
+
+# save to .csv file then read
+df.to_csv(filename, sep=',')
+new_df = pd.read_csv(filename)
+#This row may be needed
 del new_df['Unnamed: 0']
-new_df.columns = ['row 1']
+
+# create plot
 ax = new_df.plot.area(stacked=False)
 ax.set_xlabel('Time (s)')
 ax.set_ylabel('Pressure (Torr)')
 plt.show()
 
-##while (True):
-##	ain0val = d.getAIN(0)
-##	print "Reading for AIN0 {0:.5f}".format(ain0val)
-##		
-##	time.sleep(1)
-##
-##	ain1val = d.getAIN(1)
-##	print "Reading for AIN1 {0:.5f}".format(ain1val)
-##
-##	time.sleep(1)
+#df1 = pd.DataFrame(stuff)
+##df1.to_csv('test1.csv', sep=',')
+#new_df = pd.read_csv('test1.csv')
+#del new_df['Unnamed: 0']
+##new_df.columns = ['row 1']
+##ax = new_df.plot.area(stacked=False)
+##ax.set_xlabel('Time (s)')
+##ax.set_ylabel('Pressure (Torr)')
+##plt.show()
+
+
 
 def v2p(U):
         """convert voltage readings provided by pressure sensor to
