@@ -5,6 +5,21 @@
 # This second link is a good resource if you do not understand PID algorithms very much.
 # I found it useful.
 
+# Will want something like:
+# pid = PIDController.pidpy(cycle_time, k_param, i_param, d_param) #init pid
+# duty_cycle = pid.calcPID_reg4(temp_ma, set_point, True)
+# RPB stars with:
+# cycle_time: 0.0
+# k_param: 44
+# i_param: 165
+# d_param: 4
+
+# For Thermcouple amplifiers (MAX31855)
+import time
+import sys
+import RPi.GPIO as GPIO
+import temperature as temp
+
 class pidpy(object):
     
     #version of error during previous cycle. Thlt = Temp of Hot Liquid Tun (tank?), related to brewing I beleive.
@@ -42,7 +57,7 @@ class pidpy(object):
         Arguments
         ---------
         ts: float
-        setpoint value
+        sample period (or set point value?)
 
         kc: float
         controller gain
@@ -58,7 +73,7 @@ class pidpy(object):
 
         None
         """
-        print "boo yah"
+        #print "boo yah"
         # see above
         self.kc = kc
         self.ti = ti
@@ -103,6 +118,7 @@ class pidpy(object):
     def calcPID_reg4(self, xk, tset, enable):
         #initial error
         ek = 0.0
+
         
         #subtract current variable (xk) from desired temperature (tset) to get current error
         ek = tset - xk # calculate e[k] = SP[k] - PV[k]
@@ -118,6 +134,7 @@ class pidpy(object):
             self.pi = self.k0 * ek  # + Kc*Ts/Ti * e[k]
             self.pd = self.k1 * (2.0 * pidpy.xk_1 - xk - pidpy.xk_2)
             pidpy.yk += self.pp + self.pi + self.pd
+            #print "pidpy.yk 1:", pidpy.yk
         else:
             pidpy.yk = 0.0
             self.pp = 0.0
@@ -135,18 +152,57 @@ class pidpy(object):
             pidpy.yk = pidpy.GMA_LLIM
 
         #get you some!
+        print "PID Output:", pidpy.yk
         return pidpy.yk
         
 
 if __name__=="__main__":
+    try:
+        start_time = time.time()
+        
+        # Change pins here for desired tc amps.
+        MISO = 9
+        CS_ARRAY = [8, 7]
+        CLK = 11
+        GPIO.setmode(GPIO.BCM)
+        GPIO.setup(12, GPIO.OUT)
+        #GPIO.PWM(pin, freq) use the pin the SSR is connected to.
+        ssr_pwm = GPIO.PWM(12, 1)
+        print "Solid State Relay PWM set up"
+        time.sleep(3)
+        temp.setupSpiPins(MISO, CS_ARRAY, CLK)
+        print "Hotplate TC amps set up"
+        time.sleep(3)
+        
+        samplePeriod = 2
+        while (True):
+            for cs in CS_ARRAY:
+                val = temp.readTemp(cs)
+                #print "val {}:".format(cs), val
+                if cs == 8:
+                    print "PID TC Temp:", str(val),"deg C"
+                if cs == 7:
+                    print "BUP TC Temp:", str(val),"deg C"
+            pid = pidpy(samplePeriod,5,50,50)
+            # TC amp on this pin will be where PID gets its temperature reading
+            tmp = CS_ARRAY[1]
+            setpoint = 100
+            enable = True
+            dc = pid.calcPID_reg4(tmp, setpoint, enable)
+            #print "dc:", dc
+            dc = int(dc)
+            print "Duty Cycle:", dc
+            #update duty cycle
+            ssr_pwm.ChangeDutyCycle(dc)
+            #sleep 10 seconds
+            time.sleep(10)
+            print("--- %s seconds ---" % (time.time() - start_time))
+    except KeyboardInterrupt:
+        GPIO.cleanup()
+        sys.exit(0)
 
-    sampleTime = 2
-    pid = pidpy(sampleTime,0,0,0)
-    temp = 80
-    setpoint = 100
-    enable = True
-    print pid.calcPID_reg4(temp, setpoint, enable)
 
+        
 ## I never see RasPiBrew use this function so I'm setting it aside for now.
 ##
 ##def calcPID_reg3(self, xk, tset, enable):
