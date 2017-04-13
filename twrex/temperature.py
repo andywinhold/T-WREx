@@ -9,23 +9,38 @@
 # Adaptations may occur as needed to fit our requirements, seeing that we'll
 # likely be using more than 4 thermocouples.
 
-import RPi.GPIO as GPIO
 import math
 import time
 import sys
-
-# import pandas(?)
+import RPi.GPIO as GPIO
+import pandas as pd
+import matplotlib.pyplot as plt
 
 #----------------------------------------
 # MISO: Master Input, Slave Output
 # CS_ARRAY: Chip Set Array
 # CLK: Clock
+# Changing  setupSpiPins so I can tell it which to use.
 MISO = 9
-CS_ARRAY = [18, 23, 24, 25]
+##CS_ARRAY = [18, 23, 24, 25]
 CLK = 11
 
-def setupSpiPins():
-    ''' Set pins as an output except MISO (Master Input, Slave Output)'''
+def setupSpiPins(MISO, CS_ARRAY, CLK):
+    ''' Set pins as an output except MISO (Master Input, Slave Output)
+
+    Arguments
+    ---------
+    MISO: int
+        Master Input, Slave Output
+    CS_ARRAY: array
+        Chip Set Array
+    CLK: int
+        Clock
+
+    Returns
+    -------
+    None
+    '''
     GPIO.setup(CLK, GPIO.OUT)
     GPIO.setup(MISO, GPIO.IN)
     for cs in CS_ARRAY:
@@ -169,22 +184,56 @@ def tcuVToJTemp(volt):
 def convertCToF(temp):
     return (temp*9.0/5.0+32)
     
-    
+endplate = []
+vacplate = []
+shield = []
+tcspare = []
+filename = 'tc_testing.csv'
+
 if __name__ == '__main__':
     try:
+        start_time = time.time()
+
         GPIO.setmode(GPIO.BCM)
         #print "Started"
-        setupSpiPins()
-        #print "Setup"
-        # add while True statement here
-        # and make it measure once a second
-        for cs in CS_ARRAY:
-          val = readTemp(cs)
-          #val = convertTypeJToTypeK(val)
-          #print str(convertCToF(val))
-          print "Temp: ", str(val),"deg C"
-        GPIO.cleanup()
-        sys.exit(0)
+        # Change pins here for desired tc amps.
+        MISO = 9
+        CS_ARRAY = [18, 23, 24, 25]
+        CLK = 11
+        setupSpiPins(MISO, CS_ARRAY, CLK)
+        print "Themocouples Setup"
+        while (True):
+            for cs in CS_ARRAY:
+              val = readTemp(cs)
+              if cs == 18:
+                  print "TC End Plate Temp:", str(val),"deg C"
+                  endplate.append(val)
+              if cs == 23:
+                  print "TC Vac Plate Temp:", str(val),"deg C"
+                  vacplate.append(val)
+              if cs == 24:
+                  print "TC Shield Temp:", str(val),"deg C"
+                  shield.append(val)
+              if cs == 25:
+                  print "TC ? Temp:", str(val),"deg C"
+                  tcspare.append(val)
+            time.sleep(10)
+            print("--- Time elapsed: %s seconds ---" % (time.time() - start_time))
     except KeyboardInterrupt:
         GPIO.cleanup()
-        sys.exit(0)
+##        sys.exit(0)
+        # make lists into data frame
+        df = pd.DataFrame({'TC End Plate': endplate, 'TC Vac Plate': vacplate,\
+                           'TC Shield': shield, 'TC Spare': tcspare})
+
+        # save to .csv file then read
+        df.to_csv(filename, sep=',')
+        new_df = pd.read_csv(filename)
+        #This row may be needed
+        del new_df['Unnamed: 0']
+
+        # create plot
+        ax = new_df.plot.area(stacked=False)
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Temperature (C)')
+        plt.show()
