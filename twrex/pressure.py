@@ -11,6 +11,7 @@ import time
 import sys
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 ##import u3
 
 def v_upconvert(V):
@@ -59,6 +60,22 @@ def v2p(V):
         p = 10**((V - 7.75)/0.75 + c)
         return p
 
+def animate(i):
+        print "were kinda working"
+        data = open('testing_keybord_inter1.csv', 'r').read()
+        print "were still kinda working"
+        array = data.split('\n')
+        array = array[1:]
+        for i in array:
+                if len(i)>1:
+                        r,x,y = i.split(',')
+                        print x,y
+                        xar.append(float(x))
+                        yar.append(float(y))
+        ax.clear()
+        ax.plot()
+        return
+        
 if __name__ == '__main__':
     try:
         start_time = time.time()
@@ -94,9 +111,16 @@ if __name__ == '__main__':
         ##print "testing AIN1 {0:.5f}".format(ain1val)
         ##print ain1val
         stuff = []
+        xar = []
+        yar = []
         p1 = []
         p2 = []
-        filename = 'testing_keybord_inter.csv'
+        filename = 'testing_keybord_inter1.csv'
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.set_xlabel('Time (s)')
+        ax.set_ylabel('Pressure (Torr)')
+        
         while (True):
                 # Get reading from first pressure sensor
         ##      vval1 = d.getAIN(0)
@@ -133,22 +157,45 @@ if __name__ == '__main__':
         ##        p1.append(pval1)
         ##        p2.append(pval2)
                 print("--- Time elapsed: %s seconds ---" % (time.time() - start_time))
+##                # make lists into data frame
+                df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
+##                df.drop(['Unnamed: 0'])
+
+##                # save to .csv file then read
+                df.to_csv(filename, sep=',')
+                #new_df = pd.read_csv(filename)
+                #This row may be needed
+                
+
+                animation.FuncAnimation(fig,animate, interval=10)
+                plt.show()
+                # create plot
+##                ax = new_df.plot.area(stacked=False)
+##                ax.set_xlabel('Time (s)')
+##                ax.set_ylabel('Pressure (Torr)')
+##                plt.show()
+
     except KeyboardInterrupt:
-##            sys.exit(0)
             # make lists into data frame
-            df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
+##            df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
 
-            # save to .csv file then read
-            df.to_csv(filename, sep=',')
-            new_df = pd.read_csv(filename)
-            #This row may be needed
-            del new_df['Unnamed: 0']
-
-            # create plot
-            ax = new_df.plot.area(stacked=False)
-            ax.set_xlabel('Time (s)')
-            ax.set_ylabel('Pressure (Torr)')
-            plt.show()
+            # save to .csv file
+##            df.to_csv(filename, sep=',')
+            sys.exit(0)
+##            # make lists into data frame
+##            df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
+##
+##            # save to .csv file then read
+##            df.to_csv(filename, sep=',')
+##            new_df = pd.read_csv(filename)
+##            #This row may be needed
+##            del new_df['Unnamed: 0']
+##
+##            # create plot
+##            ax = new_df.plot.area(stacked=False)
+##            ax.set_xlabel('Time (s)')
+##            ax.set_ylabel('Pressure (Torr)')
+##            plt.show()
 
             #df1 = pd.DataFrame(stuff)
             ##df1.to_csv('test1.csv', sep=',')
@@ -163,4 +210,4 @@ if __name__ == '__main__':
 
 
 
-    # Ctrl+C to close program
+# Ctrl+C to close program
