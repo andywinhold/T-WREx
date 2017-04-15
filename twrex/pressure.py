@@ -9,9 +9,12 @@
 
 import time
 import sys
-import pandas as pd
+import numpy as np
+import os
+import argparse
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+#import matplotlib.animation as animation
+import pandas as pd
 import u3
 
 def v_upconvert(V):
@@ -75,14 +78,32 @@ def animate(i):
         ax.clear()
         ax.plot()
         return
-        
+
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('filename', type=str, help=
+		'provide filename for data collection')
+	args = parser.parse_args()
+	#thermocouple(args.filename)
+	return args.filename
+
+
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1)
 if __name__ == '__main__':
+    filename = main()
+    filepath = '/home/pi/Desktop/data/'
+    full = os.path.join(filepath, filename)
+    f = open(full, 'a')
+    print "filepath and name:",full
     try:
         start_time = time.time()
 
         ###Empty lists for both pressure sensors
         p1 = []
         p2 = []
+        tls = []
 
         ### Establish connection to first U3 device found. We should only have one connected.
         d = u3.U3()
@@ -147,41 +168,42 @@ if __name__ == '__main__':
 ##                p1.append(p1fl)
 ##                p2.append(p2fl)
 ##                stuff.append(add)
+                tdiff = time.time() - start_time
+                tls.append(tdiff)
 
                 # add readings to their lists
                 pval1 = float(pval1)
                 pval2 = float(pval2)
                 p1.append(pval1)
                 p2.append(pval2)
+
+                tlsnp = np.array(tls)
+                pval1np = np.array(pval1)
+                pval2np = np.array(pval2)
+                ax.plot(tlsnp, pval1np, label='Sensor 1')
+                ax.plot(tlsnp, pval2np, label='Sensor 2')
+                plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+                ax.set_xlabel('Time (s)')
+                ax.set_ylabel('Pressure (Torr)')
+                #give it time to update (i believe)
+                plt.pause(0.05)
+                time.sleep(5)
                 print("--- Time elapsed: %s seconds ---" % (time.time() - start_time))
-####                # make lists into data frame
-##                df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
-####                df.drop(['Unnamed: 0'])
-##
-####                # save to .csv file then read
-##                df.to_csv(filename, sep=',')
-##                new_df = pd.read_csv(filename)
-##                #This row may be needed
-##                #del df['Unamed: 0']
-##
-##                #animation.FuncAnimation(fig,animate, interval=10)
-##                #plt.show()
-##                # create plot
-##                ax = new_df.plot.area(stacked=False)
-##                ax.set_xlabel('Time (s)')
-##                ax.set_ylabel('Pressure (Torr)')
-##                plt.show()
+                ax.clear()
+                plt.pause(0.05)
 
     except KeyboardInterrupt:
+            plt.savefig(full + '.png')
+            print "Saving image:", full + '.png'
             # make lists into data frame
             df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
 
             # save to .csv file
-            df.to_csv(filename, sep=',')
+            df.to_csv(full, sep=',')
             #sys.exit(0)
             # make lists into data frame
             df = pd.DataFrame({'Sensor 1': p1, 'Sensor 2': p2})
-##
+
             # save to .csv file then read
             df.to_csv(filename, sep=',')
             new_df = pd.read_csv(filename)
@@ -189,10 +211,10 @@ if __name__ == '__main__':
             del new_df['Unnamed: 0']
 
             # create plot
-            ax = new_df.plot.area(stacked=False)
-            ax.set_xlabel('Time')
-            ax.set_ylabel('Pressure (Torr)')
-            plt.show()
+            #ax = new_df.plot.area(stacked=False)
+            #ax.set_xlabel('Time')
+            #ax.set_ylabel('Pressure (Torr)')
+            #plt.show()
 
             #df1 = pd.DataFrame(stuff)
             ##df1.to_csv('test1.csv', sep=',')
