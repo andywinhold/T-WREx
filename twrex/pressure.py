@@ -178,8 +178,8 @@ if __name__ == '__main__':
                 p2.append(pval2)
 
                 tlsnp = np.array(tls)
-                pval1np = np.array(pval1)
-                pval2np = np.array(pval2)
+                pval1np = np.array(p1)
+                pval2np = np.array(p2)
                 ax.plot(tlsnp, pval1np, label='Sensor 1')
                 ax.plot(tlsnp, pval2np, label='Sensor 2')
                 plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
