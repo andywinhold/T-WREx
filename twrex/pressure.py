@@ -35,9 +35,9 @@ def v_upconvert(V):
         voltage value converted to reflect what was sent initially by pressure sensor.
         """
         # values of resistors used in voltage divider in ohms.
-        r1 = 1000
+        r1 = 1000.0
         #in our case r2 is a 300 ohm and 15 ohm in series.
-        r2 = 315
+        r2 = 315.0
         r = (r1 + r2)/r2
         V_up = V * r
         return V_up
@@ -58,9 +58,8 @@ def v2p(V):
         pressure reading in units of Torr
         """
         #conversion factor to convert V to Torr
-        c = -0.125
-
-        p = 10**((V - 7.75)/0.75 + c)
+        exp = ((V - 7.75)/0.75 - 0.125)
+        p = 10**exp
         return p
 
 def animate(i):
@@ -93,7 +92,7 @@ fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
 if __name__ == '__main__':
     filename = main()
-    filepath = '/home/pi/Desktop/data/'
+    filepath = '/home/pi/Desktop/data/tests/p_tests/'
     full = os.path.join(filepath, filename)
     f = open(full, 'a')
     print "filepath and name:",full
@@ -134,9 +133,8 @@ if __name__ == '__main__':
         xar = []
         yar = []
 
-        filename = 'testing_keybord_inter1.csv'
+        #filename = 'testing_keybord_inter1.csv'
 
-##        
         while (True):
                 # Get reading from first pressure sensor
                 vval1 = d.getAIN(0)
@@ -157,17 +155,7 @@ if __name__ == '__main__':
                 print "p2 pressure: {0:.15f}".format(pval2)
 
                 time.sleep(5)
-##                p1int = raw_input('add1')
-##                p2int = raw_input('add2')
-##                if p1int == 'done':
-##                        print "end of collection"
-##                        print stuff
-##                        break
-##                p1fl = float(p1int)
-##                p2fl = float(p2int)
-##                p1.append(p1fl)
-##                p2.append(p2fl)
-##                stuff.append(add)
+
                 tdiff = time.time() - start_time
                 tls.append(tdiff)
 

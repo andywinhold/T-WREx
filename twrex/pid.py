@@ -17,8 +17,14 @@
 # For Thermcouple amplifiers (MAX31855)
 import time
 import sys
+import argparse
+import numpy as np
+import os
+import math
+import pandas as pd
 import RPi.GPIO as GPIO
 import temperature as temp
+import matplotlib.pyplot as plt
 
 class pidpy(object):
     
@@ -154,20 +160,40 @@ class pidpy(object):
         #get you some!
         print "PID Output:", pidpy.yk
         return pidpy.yk
-        
 
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('filename', type=str, help=
+		'provide filename for data collection')
+	args = parser.parse_args()
+	return args.filename
+
+pidt = []
+bupt = []
+dutycycle = []
+tls = []
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1)
 if __name__=="__main__":
+    filename = main()
+    filepath = '/home/pi/Desktop/data/tests/ssr_tests/'
+    full = os.path.join(filepath, filename)
+    f = open(full, 'a')
+    print "SSR Data filepath and name:",full
+    
     try:
         start_time = time.time()
         
         # Change pins here for desired tc amps.
         MISO = 9
-        CS_ARRAY = [8, 7]
+        CS_ARRAY = [5, 6]
         CLK = 11
         GPIO.setmode(GPIO.BCM)
         GPIO.setup(12, GPIO.OUT)
         #GPIO.PWM(pin, freq) use the pin the SSR is connected to.
         ssr_pwm = GPIO.PWM(12, 1)
+        ssr_pwm.start(90)
         print "Solid State Relay PWM set up"
         time.sleep(3)
         temp.setupSpiPins(MISO, CS_ARRAY, CLK)
@@ -177,27 +203,55 @@ if __name__=="__main__":
         samplePeriod = 2
         while (True):
             for cs in CS_ARRAY:
-                val = temp.readTemp(cs)
+                #val = temp.readTemp(cs)
                 #print "val {}:".format(cs), val
-                if cs == 8:
-                    print "PID TC Temp:", str(val),"deg C"
-                if cs == 7:
-                    print "BUP TC Temp:", str(val),"deg C"
+                if cs == 5:
+                    five = temp.readTemp(cs)
+                    print "PID TC Temp:", str(five),"deg C"
+                    pidt.append(five)
+                if cs == 6:
+                    six = temp.readTemp(cs)
+                    print "BUP TC Temp:", str(six),"deg C"
+                    bupt.append(six)
+            tdiff = time.time() - start_time
+            tls.append(tdiff)
+            
             pid = pidpy(samplePeriod,5,50,50)
             # TC amp on this pin will be where PID gets its temperature reading
-            tmp = CS_ARRAY[1]
-            setpoint = 100
+            #Setpoint is the desired temperature of the hot plate in Celsius since
+            # The TCs are measured in Celsius.
+            setpoint = 33.0
             enable = True
-            dc = pid.calcPID_reg4(tmp, setpoint, enable)
-            #print "dc:", dc
+            dc = pid.calcPID_reg4(five, setpoint, enable)
             dc = int(dc)
             print "Duty Cycle:", dc
+            dutycycle.append(dc)
             #update duty cycle
             ssr_pwm.ChangeDutyCycle(dc)
+
+            # matplotlib likes numpy arrays
+            tlsnp = np.array(tls)
+            pidtnp = np.array(pidt)
+            buptnp = np.array(bupt)
+            ax.plot(tlsnp, pidtnp, label='pid temp', alpha=0.7)
+            ax.plot(tlsnp, buptnp, label='back up temp', alpha=0.7)
+            lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            ax.set_xlabel('Time (s)')
+            ax.set_ylabel('Temperature (C)')
+            #give it time to update (i believe)
+            plt.pause(0.05)
             #sleep 10 seconds
             time.sleep(10)
             print("--- %s seconds ---" % (time.time() - start_time))
+            ax.clear()
+            plt.pause(0.05)
     except KeyboardInterrupt:
+        plt.savefig(full + '.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        print "Saving image:", full + '.png'
+        df = pd.DataFrame({'pid temp': pidt, 'back up temp': bupt})
+        df.to_csv(full, sep=',')
+        new_df = pd.read_csv(full)
+        del new_df['Unnamed: 0']
         GPIO.cleanup()
         sys.exit(0)
 

@@ -192,7 +192,6 @@ def main():
 	parser.add_argument('filename', type=str, help=
 		'provide filename for data collection')
 	args = parser.parse_args()
-	#thermocouple(args.filename)
 	return args.filename
 
 def thermocouple(args):
@@ -214,10 +213,10 @@ fig = plt.figure()
 ax = fig.add_subplot(1,1,1)
 if __name__ == '__main__':
     filename = main()
-    filepath = '/home/pi/Desktop/data/'
+    filepath = '/home/pi/Desktop/data/tests/t_tests/'
     full = os.path.join(filepath, filename)
     f = open(full, 'a')
-    print "filepath and name:",full
+    print "Temperature filepath and name:",full
 
     try:
         start_time = time.time()
@@ -231,22 +230,25 @@ if __name__ == '__main__':
         print "Themocouples Setup"
         while (True):
             for cs in CS_ARRAY:
-              val = readTemp(cs)
               if cs == 18:
+                  val = readTemp(cs)
                   print "TC End Plate Temp:", str(val),"deg C"
-                  val = val + cs
+                  val = val
                   endplate.append(val)
               if cs == 23:
+                  val = readTemp(cs)
                   print "TC Vac Plate Temp:", str(val),"deg C"
-                  val = val + cs
+                  val = val
                   vacplate.append(val)
               if cs == 24:
+                  val = readTemp(cs)
                   print "TC Shield Temp:", str(val),"deg C"
-                  val = val + cs
+                  val = val
                   shield.append(val)
               if cs == 25:
+                  val = readTemp(cs)
                   print "TC ? Temp:", str(val),"deg C"
-                  val = val + cs
+                  val = val
                   tcspare.append(val)
             # Get time ellapsed since beginning and append
             tdiff = time.time() - start_time
@@ -269,7 +271,7 @@ if __name__ == '__main__':
             ax.set_ylabel('Temperature (C)')
             #give it time to update (i believe)
             plt.pause(0.05)
-            time.sleep(5)
+            time.sleep(2)
             print("--- Time elapsed: %s seconds ---" % (tdiff))
             ax.clear()
             plt.pause(0.05)
