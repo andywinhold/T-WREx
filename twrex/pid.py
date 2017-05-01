@@ -63,6 +63,7 @@ class pidpy(object):
         Arguments
         ---------
         ts: float
+        
         sample period (or set point value?)
 
         kc: float
@@ -140,7 +141,7 @@ class pidpy(object):
             self.pi = self.k0 * ek  # + Kc*Ts/Ti * e[k]
             self.pd = self.k1 * (2.0 * pidpy.xk_1 - xk - pidpy.xk_2)
             pidpy.yk += self.pp + self.pi + self.pd
-            #print "pidpy.yk 1:", pidpy.yk
+
         else:
             pidpy.yk = 0.0
             self.pp = 0.0
@@ -158,6 +159,7 @@ class pidpy(object):
             pidpy.yk = pidpy.GMA_LLIM
 
         #get you some!
+        
         print "PID Output:", pidpy.yk
         return pidpy.yk
 
@@ -256,7 +258,8 @@ if __name__=="__main__":
         sys.exit(0)
 
 
-        
+    
+
 ## I never see RasPiBrew use this function so I'm setting it aside for now.
 ##
 ##def calcPID_reg3(self, xk, tset, enable):

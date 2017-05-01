@@ -19,10 +19,12 @@ import RPi.GPIO as GPIO
 import pandas as pd
 import matplotlib.pyplot as plt
 
+
 #----------------------------------------
 # MISO: Master Input, Slave Output
 # CS_ARRAY: Chip Set Array
 # CLK: Clock
+
 # Changing  setupSpiPins so I can tell it which to use.
 MISO = 9
 ##CS_ARRAY = [18, 23, 24, 25]
@@ -44,6 +46,7 @@ def setupSpiPins(MISO, CS_ARRAY, CLK):
     -------
     None
     '''
+
     GPIO.setup(CLK, GPIO.OUT)
     GPIO.setup(MISO, GPIO.IN)
     for cs in CS_ARRAY:
@@ -86,6 +89,7 @@ def readTemp(miso):
 
     temp = temp * 0.25
     return temp
+
 
 def recvBits(cs, numBits):
     '''Receives arbitrary number of bits'''
