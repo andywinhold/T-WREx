@@ -9,43 +9,64 @@
 # Adaptations may occur as needed to fit our requirements, seeing that we'll
 # likely be using more than 4 thermocouples.
 
-import RPi.GPIO as GPIO
 import math
 import time
 import sys
+import os
+import argparse
+import numpy as np
+import RPi.GPIO as GPIO
+import pandas as pd
+import matplotlib.pyplot as plt
 
-# import pandas(?)
 
 #----------------------------------------
 # MISO: Master Input, Slave Output
 # CS_ARRAY: Chip Set Array
 # CLK: Clock
+
+# Changing  setupSpiPins so I can tell it which to use.
 MISO = 9
-CS_ARRAY = [18, 23, 24, 25]
+##CS_ARRAY = [18, 23, 24, 25]
 CLK = 11
 
-def setupSpiPins():
-    ''' Set pins as an output except MISO (Master Input, Slave Output)'''
+def setupSpiPins(MISO, CS_ARRAY, CLK):
+    ''' Set pins as an output except MISO (Master Input, Slave Output)
+
+    Arguments
+    ---------
+    MISO: int
+        Master Input, Slave Output
+    CS_ARRAY: array
+        Chip Set Array
+    CLK: int
+        Clock
+
+    Returns
+    -------
+    None
+    '''
+
     GPIO.setup(CLK, GPIO.OUT)
     GPIO.setup(MISO, GPIO.IN)
     for cs in CS_ARRAY:
       GPIO.setup(cs, GPIO.OUT)
-    
+
     GPIO.output(CLK, GPIO.LOW)
     for cs in CS_ARRAY:
       GPIO.output(cs, GPIO.HIGH)
-     
+
 
 def readTemp(miso):
-    
+
     tcValue = recvBits(miso, 32)
     #print "TC value: %x" % (tcValue)
 
     if (tcValue & 0x8):
-      return 0 #"ERROR: Reserved bit 3 is 1" 
+      return 0 #"ERROR: Reserved bit 3 is 1"
 
     if (tcValue & 0x20000):
-      return 0 #"ERROR: Reserved bit 17 is 1" 
+      return 0 #"ERROR: Reserved bit 17 is 1"
 
     if (tcValue & 0x10000):
       if (tcValue & 0x1):
@@ -68,18 +89,19 @@ def readTemp(miso):
 
     temp = temp * 0.25
     return temp
-    
+
+
 def recvBits(cs, numBits):
     '''Receives arbitrary number of bits'''
     retVal = 0
 
     # Start the read with chip select low
     GPIO.output(cs, GPIO.LOW)
-    
+
     for bit in range(numBits):
-        # Pulse clock pin 
+        # Pulse clock pin
         GPIO.output(CLK, GPIO.HIGH)
-        
+
         # Advance input to next bit
         retVal <<= 1
 
@@ -89,26 +111,26 @@ def recvBits(cs, numBits):
             retVal |= 0x1
         #else:
 	#    print 31-bit, "0"
-        
+
         GPIO.output(CLK, GPIO.LOW)
         time.sleep(.001)
-    
+
     # Set chip select high to end the read
     GPIO.output(cs, GPIO.HIGH)
 
     return (retVal)
 
 def convertTypeJToTypeK(temp):
-    ''' Output temperature based on a Type J Thermocouple. 
-        Theory: 
+    ''' Output temperature based on a Type J Thermocouple.
+        Theory:
           The output temperature for a thermocouple is based on a voltage
           difference across the device. To use a Type J Thermocouple with the
           MAX31855K measurement sensor, do the following:
-           1) Use the ITS-90 Type-K Direct Polynomial to find the 
+           1) Use the ITS-90 Type-K Direct Polynomial to find the
               thermoelectric voltage from the reported temperature
            2) Use the ITS-90 Type-J Inverse Polynomial to find the
               temperature from the computed thermoelectric voltage
-          NB: If polynomials are too hard to compute, use a lookup table 
+          NB: If polynomials are too hard to compute, use a lookup table
               instead.
     '''
     volt = tcKTempTouV(temp)
@@ -163,28 +185,112 @@ def tcuVToJTemp(volt):
     temp = 0
     for (i, coeff) in enumerate(indirect_coeff[mode]):
         temp += coeff * pow(volt, i)
-        
+
     return temp
 
 def convertCToF(temp):
     return (temp*9.0/5.0+32)
-    
-    
+
+def main():
+	parser = argparse.ArgumentParser()
+	parser.add_argument('filename', type=str, help=
+		'provide filename for data collection')
+	args = parser.parse_args()
+	return args.filename
+
+def thermocouple(args):
+	print('This is working?')
+	filepath = '/home/pi/Desktop/data/'
+	filename = args
+	full = os.path.join(filepath, filename)
+	f = open(full, 'a')
+	print(full)
+	print('See? its working!')
+
+endplate = []
+vacplate = []
+shield = []
+tcspare = []
+tls = []
+plt.ion()
+fig = plt.figure()
+ax = fig.add_subplot(1,1,1)
 if __name__ == '__main__':
+    filename = main()
+    filepath = '/home/pi/Desktop/data/tests/t_tests/'
+    full = os.path.join(filepath, filename)
+    f = open(full, 'a')
+    print "Temperature filepath and name:",full
+
     try:
+        start_time = time.time()
         GPIO.setmode(GPIO.BCM)
         #print "Started"
-        setupSpiPins()
-        #print "Setup"
-        # add while True statement here
-        # and make it measure once a second
-        for cs in CS_ARRAY:
-          val = readTemp(cs)
-          #val = convertTypeJToTypeK(val)
-          #print str(convertCToF(val))
-          print "Temp: ", str(val),"deg C"
-        GPIO.cleanup()
-        sys.exit(0)
+        # Change pins here for desired tc amps.
+        MISO = 9
+        CS_ARRAY = [18, 23, 24, 25]
+        CLK = 11
+        setupSpiPins(MISO, CS_ARRAY, CLK)
+        print "Themocouples Setup"
+        while (True):
+            for cs in CS_ARRAY:
+              if cs == 18:
+                  val = readTemp(cs)
+                  print "TC End Plate Temp:", str(val),"deg C"
+                  val = val
+                  endplate.append(val)
+              if cs == 23:
+                  val = readTemp(cs)
+                  print "TC Vac Plate Temp:", str(val),"deg C"
+                  val = val
+                  vacplate.append(val)
+              if cs == 24:
+                  val = readTemp(cs)
+                  print "TC Shield Temp:", str(val),"deg C"
+                  val = val
+                  shield.append(val)
+              if cs == 25:
+                  val = readTemp(cs)
+                  print "TC ? Temp:", str(val),"deg C"
+                  val = val
+                  tcspare.append(val)
+            # Get time ellapsed since beginning and append
+            tdiff = time.time() - start_time
+            tls.append(tdiff)
+
+            # matplotlib likes numpy arrays
+            tlsnp = np.array(tls)
+            endplatenp = np.array(endplate)
+            vacplatenp = np.array(vacplate)
+            shieldnp = np.array(shield)
+            tcsparenp = np.array(tcspare)
+
+            #plotting
+            ax.plot(tlsnp, endplatenp, label='endplate', alpha=0.3)
+            ax.plot(tlsnp, vacplatenp, label='vacplate', alpha=0.3)
+            ax.plot(tlsnp, shieldnp, label='shield', alpha=0.3)
+            ax.plot(tlsnp, tcsparenp, label='tcspare', alpha=0.3)
+            lgd = plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+            ax.set_xlabel('Time (s)')
+            ax.set_ylabel('Temperature (C)')
+            #give it time to update (i believe)
+            plt.pause(0.05)
+            time.sleep(2)
+            print("--- Time elapsed: %s seconds ---" % (tdiff))
+            ax.clear()
+            plt.pause(0.05)
     except KeyboardInterrupt:
+        plt.savefig(full + '.png', bbox_extra_artists=(lgd,), bbox_inches='tight')
+        print "Saving image:", full + '.png'
         GPIO.cleanup()
-        sys.exit(0)
+##        sys.exit(0)
+        # make lists into data frame
+        df = pd.DataFrame({'TC End Plate': endplate, 'TC Vac Plate': vacplate,\
+                           'TC Shield': shield, 'TC Spare': tcspare})
+
+        # save to .csv file then read
+        df.to_csv(full, sep=',')
+        new_df = pd.read_csv(full)
+        #This row may be needed
+        del new_df['Unnamed: 0']
+

@@ -18,7 +18,7 @@ import argparse
 
 def thermocouple(args):
 	print('This is working?')
-	filepath = '/Users/andrewwinhold/Desktop/'
+	filepath = '/home/pi/Desktop/data/'
 	filename = args
 	full = os.path.join(filepath, filename)
 	f = open(full, 'a')
@@ -32,3 +32,5 @@ def main():
 		'provide filename for data collection')
 	args = parser.parse_args()
 	thermocouple(args.filename)
+# I believe this is unfinished and the work that wouldve been added on here was
+# improved elsewhere.
